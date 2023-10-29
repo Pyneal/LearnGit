@@ -464,3 +464,140 @@ $ git log --graph --pretty=oneline --abbrev-commit
 
 Git分支很强大，在团队开发中应用广泛。合并分支时加上 `--no-ff` 参数就可用普通模式合并，合并后历史有分支，能看出曾经做过合并，而 `fast forward` 合并就看不出合并了。
 
+- Bug分支
+
+Git有强大的分支结构，因而每个bug都可使用一个新的临时分支来修复，修复后，合并分支，然后将临时分支删除。
+
+比如我们突然接到一个任务，要去修复代号为101的bug。我们很自然地想到要创建分支 `issue-101` 来修复，但是我们在 `dev` 上的工作还没有提交：
+
+``````bash
+$ git status
+On branch dev
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	new file:   hello.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   readme.txt
+``````
+
+该项工作一时提交不了，但是bug又急需修复，我们就需要使用Git提供的 `stash` 功能，把当前工作现场”储藏“，等以后恢复现场后再继续工作：
+
+``````bash
+$ git stash
+Saved working directory and index state WIP on dev: f52c633 add merge
+``````
+
+现在，用 `git status` 查看工作区就是干净的了（除非有没被Git管理的文件），因此可以放心创建分支来修复bug。
+
+首先确定在哪个分支上修复bug，假如需要在 `master` 分支上修复，就从 `master` 分支上新建临时分支：
+
+``````bash
+$ git checkout master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 6 commits.
+  (use "git push" to publish your local commits)
+
+$ git checkout -b issue-101
+Switched to a new branch 'issue-101'
+``````
+
+修复bug后，我们进行提交：
+
+``````bash
+$ git add readme.txt 
+$ git commit -m "fix bug 101"
+[issue-101 4c805e2] fix bug 101
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+``````
+
+修复完成后，切换回到 `master` 分支，并 `git merge` ，最后删除 `issue-101` 分支：
+
+``````bash
+$ git switch master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 6 commits.
+  (use "git push" to publish your local commits)
+
+$ git merge --no-ff -m "merged bug fix 101" issue-101
+Merge made by the 'recursive' strategy.
+ readme.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ 
+ $ git branch -d issue-101
+ 
+``````
+
+现在bug就修复完成了，回到 `dev` 分支继续干活：
+
+``````bash
+$ git switch dev
+Switched to branch 'dev'
+
+$ git status
+On branch dev
+nothing to commit, working tree clean
+``````
+
+但是，之前的工作现场还需要恢复一下，才能正式开工，先用 `git stash list` 查看工作现场位置：
+
+``````bash
+$ git stash list
+stash@{0}: WIP on dev: f52c633 add merge
+``````
+
+工作现场找到了，需要恢复，有两个办法：①用 `git stash apply` 恢复，但是恢复以后，stash内容不删除，需要用 `git stash drop` 来删除；②用 `git stash pop` 恢复，恢复的同时也就把stash内容删了：
+
+``````bash
+$ git stash pop
+On branch dev
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	new file:   hello.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   readme.txt
+
+Dropped refs/stash@{0} (5d677e2ee266f39ea296182fb2354265b91b3b2a)
+``````
+
+再用 `git stash list` 命令查看，就看不到任何stash内容了：
+
+``````bash
+$ git stash list
+``````
+
+可以多次stash，恢复的时候先用 `git stash list` 命令查看，然后恢复指定的stash：
+
+``````bash
+$ git stash apply stash@{0}
+``````
+
+上面我们在master分支上修复了bug，但是dev分支是从master分出来的，很可能也存在这个bug，也需要进行修复，我们不想再重复操作一遍。
+
+我们只需要将上面commit的 `4c805e2 fix bug 101` 这个提交所做修改“复制”到 `dev` 分支上。注意：我们只是想复制 `4c805e2 fix bug 101` 这个提交所做的修改，不是把整个 `master` 分支都merge过来。
+
+为了方便操作，Git专门提供了 `cherry-pick` 命令让我们能复制一个指定的提交到当前分支：
+
+``````bash
+$ git branch
+* dev
+  master
+$ git cherry-pick 4c805e2
+[master 1d4b803] fix bug 101
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+``````
+
+这里Git自动给 `dev` 分支做了一次提交，注意这次提交的commit_id是 `1d4b803` ，它不同于 `master` 的 `4c805e2` ，因为这两个commit只是改动相同，并不是同一个commit。使用 `git cherry-pick` 命令，我们就无需在 `dev` 分支上重新修一遍bug，然后提交。
+
+注意：我们也可以在 `dev` 分支上修复bug，然后在`master` 分支上重放，不过仍然需要 `git stash` 保存现场，才能从 `dev` 分支安全地切换到其他分支（保留当前工作现场）。
+
+- Feature分支
