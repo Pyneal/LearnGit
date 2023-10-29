@@ -463,3 +463,4 @@ $ git log --graph --pretty=oneline --abbrev-commit
 ![image-20231029152048876](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20231029152048876.png)
 
 Git分支很强大，在团队开发中应用广泛。合并分支时加上 `--no-ff` 参数就可用普通模式合并，合并后历史有分支，能看出曾经做过合并，而 `fast forward` 合并就看不出合并了。
+
