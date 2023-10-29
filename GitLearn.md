@@ -210,3 +210,42 @@ Git会继续提示 `Warning: Permanently added 'github.com' (ED25519) to the lis
 ⑤关联远程库：`git remote add name git@server-name/repo-name.git` ；第一次推送master分支： `git push -u origin master` ；后续提交： `git push origin master` ；删除与远程库的关联： `gir remote rm name`
 
 ⑥分布式系统最大好处之一便是在本地工作时完全不需要考虑远程库的存在，不联网也可工作，而SVN在没联网时是不能工作的。
+
+- 从远程库克隆
+
+``````bash
+$ git clone git@github.com:Pyneal/gitskills.git
+Cloning into 'gitskills'...
+remote: Enumerating objects: 3, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+Receiving objects: 100% (3/3), done.
+``````
+
+`$ git clone git@github.com:Pyneal/gitskills.git` 即可实现，可通过 `cd gitskills`命令进入仓库，使用 `ls` 或 `dir` 命令查看仓库中的文件。
+
+GitHub给出的地址不止一个，还可以用 `https://github.com/Pyneal/gitskills.git` 这样的地址。这是因为Git支持多种协议，默认的 `git://` 使用SSH协议，但也可以使用 `https` 等其他协议。
+
+使用 `https` 协议除了速度慢，有个更大的麻烦是每次推送都必须输入口令。不过某些只开放http端口的公司内部无法使用 `SSH` 而只能使用 `https` 。
+
+## 4.分支管理
+
+- 创建与合并分支
+
+每次提交，Git都会将版本文件串成一条时间线，时间线即是一个分支。如果只有一条时间线，那该分支就叫主分支，即 `master` 分支。 `HEAD` 严格来说不是指向提交，而是指向 `master` ，`master` 才指向提交。
+
+![image-20231029102302621](Typora_Figure/image-20231029102302621.png)
+
+每次提交后，`master` 分支都会前移一步。随着不断提交，`master` 分支线就越来越长。
+
+如果再新建一个分支，比如 `dev` ，Git会新建指针 `dev` ，指向`master` 相同的提交，再把 `HEAD` 指向 `dev` ，表示当前分支在 `dev` 上：
+
+![image-20231029102228281](Typora_Figure/image-20231029102228281.png)
+
+Git创建分支是非常迅速的，因为除了增加一个 `dev` 指针，改变了 `HEAD` 指向，工作区的文件都没有发生任何变化。
+
+但是从现在开始对工作区的修改和提交就是针对 `dev` 分支了。比如新提交一次后，`dev` 指针前移一步， `master` 指针不变：
+
+![image-20231029110806851](Typora_Figure/image-20231029110806851.png)
+
+如果在 `dev` 上完成工作，就可将 `dev` 合并到 `master` 分支上。
