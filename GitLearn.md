@@ -386,11 +386,80 @@ Deleted branch feature1 (was 1dba29d).
 
 - 分支管理策略
 
-通常在合并分支时，如果可能，Git都会采用 `Fast-forward` 模式，但在这种模式下，删除分支后会丢掉分支信息。
+通常在合并分支时，如果可能，Git会采用 `Fast forward` 模式，但这种模式下，删除分支后会丢失分支信息。
 
-如果要强制禁用 `Fast-forward` 模式，Git就会在merge的时候生成一个新的commit，这样从分支历史上就可看出分支信息。
+如果强制禁用 `Fast forward` 模式，Git就会在merge后生成一个新的commit，这样从分支历史上就可看出分支信息。
 
-下面，我们实战一下 `--no-ff` 方式的 `git merge` 。
+下面我们可以实战一下 `--no-ff` 方式的 `git merge` 。
 
-首先，创建并切换 `dev` 分支：
+首先仍然是创建并切换 `dev` 分支：
 
+``````bash
+$ git switch -c dev
+Switched to a new branch 'dev'
+``````
+
+修改 `readme.txt` 后提交一个新的commit：
+
+``````bash
+$ git add readme.txt
+$ git commit -m "add merge"
+[dev 4726fb2] add merge
+  1 file changed, 1 insertion(+)
+``````
+
+现在切换回到 `master` :
+
+``````bash
+$ git switch master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+``````
+
+准备合并 `dev` 分支，注意 `--no-ff` 参数，表示禁用 `Fast forward` ：
+
+``````bash
+$ git merge --no-ff -m "merge with no-ff" dev
+Merge made by the 'recursive' strategy.
+ readme.txt | 1 +
+ 1 file changed, 1 insertion(+)
+``````
+
+因为本次合并要创建一个新的commit，因此加上 `-m` 参数，把commit描述写入。
+
+合并后可以用带参数 `git log` 查看分支历史：
+
+``````bash
+$ git log --graph --pretty=oneline --abbrev-commit
+*   39762af (HEAD -> master) merge with no-ff
+|\
+| * 4726fb2 (dev) add merge
+|/
+* aa70fac (origin/master) deal with conflict
+*   03db1fe conflict fixed
+|\
+| * 1dba29d And simple
+* | 3effbff and(&) simple
+* | 572ccc3 & simple
+|/
+* b79d850 branch test
+......
+``````
+
+可以看到，如果不使用 `Fast forward` 模式，merge结果如下图所示：
+
+![image-20231029151654939](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20231029151654939.png)
+
+在实际开发中，我们应该按照几个基本原则进行分支管理：
+
+① `master` 分支应该非常稳定，仅用于发布新版本，平时不能直接在上面干活。
+
+② 干活都在 `dev` 分支上进行，这些分支是不稳定的，可以协作修改，版本发布时才将 `dev` 分支合并到 `master` 分支上，在 `master` 分支发布新版本。
+
+③每个协作者都有自己的子分支，可以时不时往 `dev` 分支上合并。
+
+团队合作示意图：
+
+![image-20231029152048876](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20231029152048876.png)
+
+Git分支很强大，在团队开发中应用广泛。合并分支时加上 `--no-ff` 参数就可用普通模式合并，合并后历史有分支，能看出曾经做过合并，而 `fast forward` 合并就看不出合并了。
