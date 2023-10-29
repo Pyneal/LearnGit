@@ -383,3 +383,14 @@ Deleted branch feature1 (was 1dba29d).
 解决冲突就是把Git合并失败的文件手动编辑为我们希望的内容再提交。
 
 用 `git log --graph` 命令可以看到分支合并图。
+
+- 分支管理策略
+
+通常在合并分支时，如果可能，Git都会采用 `Fast-forward` 模式，但在这种模式下，删除分支后会丢掉分支信息。
+
+如果要强制禁用 `Fast-forward` 模式，Git就会在merge的时候生成一个新的commit，这样从分支历史上就可看出分支信息。
+
+下面，我们实战一下 `--no-ff` 方式的 `git merge` 。
+
+首先，创建并切换 `dev` 分支：
+
