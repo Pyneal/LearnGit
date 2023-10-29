@@ -250,113 +250,136 @@ Git创建分支是非常迅速的，因为除了增加一个 `dev` 指针，改�
 
 如果在 `dev` 上完成工作，就可将 `dev` 合并到 `master` 分支上。
 
-下面进行代码实操，首先创建 `dev` 分支，然后切换到 `dev` 分支：
+- 解决冲突
+
+合并分支往往也不是一帆风顺的。
+
+准备新的 `feature1` 分支，继续新分支开发：
 
 ``````bash
-$ git checkout -b dev
-Switched to a new branch 'dev'
+$ git switch -c feature1
+Switched to a new branch 'feature1'
 ``````
 
-`git ckeckout` 命令加上 `-b` 参数表示创建并切换，相当于下面两条命令：
+在 `readme.txt` 上做一些修改，然后在 `feature1` 分支上提交：
 
 ``````bash
-$ git branch dev
-$ git checkout dev
-Switched to a new branch 'dev'
+$ git commit -m "And simple"
+[feature1 1dba29d] And simple
+ 3 files changed, 113 insertions(+), 1 deletion(-)
 ``````
 
-然后可用 `git branch` 命令查看当前分支：
-
-``````bash
-$ git branch
-* dev
-  master
-``````
-
-`git branch` 命令会列出所有分支，并且当前分支前面会表上一个 `*` 符号。
-
-然后，我们就可以在 `dev` 分支上正常提交，比如对 `readme.txt` 做修改，然后提交：
-
-``````bash
-$ git add readme.txt
-$ git commit -m "branch test"
-[dev b79d850] branch test
- 1 file changed, 2 insertions(+), 1 deletion(-)
-``````
-
-现在， `dev` 分支工作完成，就可切换回到 `master` 分支：
-
-``````bash
-$ git checkout master
-Switched to branch 'master'
-Your branch is ahead of 'origin/master' by 4 commits.
-  (use "git push" to publish your local commits)
-``````
-
-切换回到 `matser` 分支后，再查看 `readme.txt` 发现刚刚添加的内容都不见了。因为刚刚的提交是在 `dev` 分支上，而 `master` 分支此刻的提交点并没有变：
-
-![image-20231029120046044](Typora_Figure/image-20231029120046044.png)
-
-现在，我们需要把 `dev` 分支的工作成果合并到 `master` 分支上：
-
-``````bash
-$ git merge dev
-Updating c8f1f55..b79d850
-Fast-forward
- readme.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-``````
-
-`git merge` 命令用于合并指定分支到当前分支。合并后再查看 `readme.txt` 就可看到和 `dev` 分支的最新提交完全一样。
-
-注意到上面提示 `Fast-forward` ，Git告诉我们，这次合并是“快进模式”，也就是直接把 `master` 指向 `dev` 的当前提交，因此合并速度非常快。不过并不是每次合并都能 `Fast-forward` 。
-
-合并完成后，就可放心删除 `dev` 分支了：
-
-```````bash
-$ git branch -d dev
-Deleted branch dev (was b79d850).
-```````
-
-删除后查看 `branch` ，就剩下 `master` 分支了：
-
-```````bash
-$ git branch
-* master
-```````
-
-因为创建、合并和删除分支非常快，所以Git鼓励我们使用分支完成某个任务，合并后再删掉分支，这和直接在 `master` 分支上工作效果相同，但过程会更加安全。
-
-我们还注意到切换分支使用 `git checkout <branch>` ，而撤销修改则使用 `git checkout -- <file>` ，同一个命令，却有两种作用，有些迷惑。
-
-实际上我们用 `switch` 更科学（新版本的Git提供了 `git switch` 命令来切换分支）
-
-创建并切换到新的 `dev` 分支，可使用：
-
-``````bash
-$ git switch -c dev
-``````
-
-直接切换到已有的 `master` 分支，可使用：
+再切换回到 `master` 分支：
 
 ``````bash
 $ git switch master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 6 commits.
+  (use "git push" to publish your local commits)
 ``````
 
-Git鼓励大量使用分支：
+Git还会自动提示我们当前 `master` 分支比远程的 `master` 分支要超前6个提交。
 
-①查看分支：`git branch` 
+在 `master` 分支上修改 `readme.txt`，然后再提交：
 
-②创建分支：`git branch <name>` 
+``````bash
+$ git add readme.txt 
+$ git commit -m "and(&) simple"
+[master 3effbff] and(&) simple
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+``````
 
-③切换分支：`git checkout <name>` 或 `git switch <name>` 
+现在，`master` 分支和 `feture1` 分支各自都有了新的提交，版本流就变成了：
 
-④创建+切换分支：`git checkout -b <name>` 或 `git switch -c <name>` 
+![image-20231029144420955](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20231029144420955.png)
 
-⑤合并某分支到当前分支：`git merge <name>` 
+这种情况下，Git无法执行快速合并（`Fast-forward`），只能试图把各自修改合并，但明显会发生冲突：
 
-⑥删除分支：`git branch -d <name>` 
+``````bash
+$ git merge feature1
+Auto-merging readme.txt
+CONFLICT (content): Merge conflict in readme.txt
+Automatic merge failed; fix conflicts and then commit the result.
+``````
 
-- 解决冲突
+使用 `git status` 也可查看冲突文件：
 
-合并分支往往不会一帆风顺，可能会发生冲突现象。
+``````bash
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
+
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+
+	both modified:   readme.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+``````
+
+我们也可直接查看 `readme.txt` 中的内容：
+
+``````bash
+Git is a distributed version control system.
+Git is free software distributed under the GPL.
+Git has a mutable index called stage.
+Git tracks changes of files.
+<<<<<<< HEAD
+Creating a new branch is quick & simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+``````
+
+Git使用 `<<<<<<<`， `=======`， `>>>>>>>`，标记了不同分支内容，我们选择修改后，再提交：
+
+``````bash
+$ git add readme.txt 
+$ git commit -m "conflict fixed"
+[master 03db1fe] conflict fixed
+``````
+
+现在，`master` 分支和 `feature1` 分支变成了下图所示：
+
+![image-20231029145227465](Typora_Figure/image-20231029145227465.png)
+
+用带参数的 `git log` 也可查看分支合并情况：
+
+``````bash
+$ git log --graph --pretty=oneline --abbrev-commit
+*   cf810e4 (HEAD -> master) conflict fixed
+|\  
+| * 14096d0 (feature1) AND simple
+* | 5dc6824 & simple
+|/  
+* b17d20e branch test
+* d46f35e (origin/master) remove test.txt
+* b84166e add test.txt
+* 519219b git tracks changes
+* e43a48b understand how stage works
+* 1094adb append GPL
+* e475afc add distributed
+* eaadf4e wrote a readme file
+``````
+
+最后，删除 `feature1` 分支：
+
+``````bash
+$ git branch -d feature1
+Deleted branch feature1 (was 14096d0).(reference)
+
+$ git branch -d feature1
+Deleted branch feature1 (was 1dba29d).
+(practical operation)
+``````
+
+当Git无法自动合并分支时，必须首先解决冲突。解决冲突后再提交，完成合并。
+
+解决冲突就是把Git合并失败的文件手动编辑为我们希望的内容再提交。
+
+用 `git log --graph` 命令可以看到分支合并图。
